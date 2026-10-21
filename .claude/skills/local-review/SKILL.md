@@ -1,6 +1,6 @@
 ---
 name: local-review
-description: The pre-PR review gate — a fresh-context, read-only `claude -p` session reviews the committed branch diff before anything is pushed or a PR is opened or amended. Load at /work's ship step, /qa's push step, and after any non-trivial fix push.
+description: The adversarial pre-PR review — a fresh-context, read-only `claude -p` session attacks the committed branch diff (tries concrete inputs that would break each changed behaviour, then refutes its own findings) before anything is pushed or a PR is opened or amended. Load at /work's ship step, /qa's push step, and after any non-trivial fix.
 user-invocable: false
 ---
 
@@ -8,7 +8,17 @@ user-invocable: false
 
 **The contract:** before a branch is pushed for review, a **separate** Claude session that never
 saw the work reads the real diff and tries to break it. The session that wrote the code is the
-worst-placed reviewer of it.
+worst-placed reviewer of it: it already believes the code is right.
+
+The reviewer is told to be an adversary, in two moves ([`prompt.md`](prompt.md)):
+
+1. **Attack.** For every behaviour the diff changes, pick the input most likely to break it (a
+   boundary, a missing value, the error path, a caller the author didn't consider) and trace the
+   code with it.
+2. **Refute.** For every break it finds, try to show it can't happen. Only survivors are reported.
+
+The second move is what keeps an adversarial reviewer useful: without it you get a wall of
+plausible, wrong findings.
 
 ## When
 
@@ -38,8 +48,11 @@ The script then proves the tree didn't change before copying the transcript to
 - Refuted or deferred → one line each, with the reason, or where it's tracked.
 - A finding you can't confidently refute is a question for the human, never a silent drop.
 - **A test-quality finding is a finding.** A test that cannot fail is a defect shipped as reassurance.
-- The PR body carries `## Local review`: the verdict, then per finding fixed (commit) /
-  refuted (why) / deferred (where). `/qa` rounds put it in the follow-up PR comment instead.
+- The PR body carries `## Local review`: the verdict, the **Attacks tried** list verbatim (it shows
+  the merger what was and wasn't probed), then per finding fixed (commit) / refuted (why) /
+  deferred (where). `/qa` rounds put it in the follow-up PR comment instead.
+- A real finding goes back through the loop (the `agent-team` skill): fresh fixer, verify, gate,
+  review again.
 
 ## Going further
 

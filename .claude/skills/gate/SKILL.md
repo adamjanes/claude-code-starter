@@ -10,6 +10,20 @@ user-invocable: false
 Actions against the lane's exact working tree merged onto `main`. Not "the tests pass on my
 machine", not a narrow run of the file you touched. A lane never pushes a branch it knows is red.
 
+## What the gate runs
+
+| Layer | Locally | Catches |
+|---|---|---|
+| **ESLint** with Next's rules **and custom rules** (`eslint-rules/`) | `pnpm lint` | framework misuse; comments that sprawl past two lines or narrate the change |
+| **TypeScript**, strict (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) | `pnpm typecheck` | the type errors a loose config lets through |
+| **Unit tests** at public seams, plus tests of the tooling itself (gate, guard hook, lint rules, evidence table) | `pnpm test` | behaviour, per the `tdd` skill |
+| **Convention tests** (`tests/unit/conventions/`) | `pnpm test` | house rules as tests: design tokens only, secrets only in production jobs, every workflow declares permissions, no focused tests |
+| **Build** | `pnpm build` | what only the production build sees |
+| **End-to-end smoke** in a real browser against the built app | `pnpm test:e2e` | the pages actually render and respond |
+
+`pnpm check` runs the first four in under a minute; it is the fast loop between edits, never the
+verdict. Adding a layer means adding a step to `ci.yml`'s gate job: from then on every lane runs it.
+
 ## Run it
 
 ```bash

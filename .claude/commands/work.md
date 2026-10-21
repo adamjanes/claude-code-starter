@@ -70,31 +70,41 @@ A short plain-English plan for someone skimming in chat, not a document:
 The human confirms or tweaks in one line. Write the plan to `.lane/plan.md` (it becomes the PR
 body's **Plan** section). No revision loops.
 
-## Step 3 — BUILD
+## Step 3 — BUILD and LOOP until green
 
 Run the `agent-team` skill inside the worktree: file-disjoint units, at most three builders in
-parallel, red-first tests, reports to `.lane/`. Then review the actual diff yourself.
+parallel, red-first tests, reports to `.lane/`. Then its loop, every pass in the same order:
 
-## Step 4 — VERIFY
+1. **Verify** the actual diff yourself against the plan.
+2. **Gate** — `pnpm gate` in the background (the `gate` skill).
+3. **Review** — commit (explicit paths), then `pnpm review`, the adversarial fresh-context
+   reviewer (the `local-review` skill).
 
-1. `pnpm gate` in the background (the `gate` skill). Red that isn't environmental gets fixed and
-   gated again. **Never push a known-red branch.**
-2. **Walk the acceptance criteria against the diff:** each is **met** (say how) or **flagged** in
+Anything wrong, red or found goes back to a **fresh fixer agent** with that one problem, and the
+pass starts again at Verify. The skill sets the bounds: three reds on the same failure means a
+fresh diagnosis and a new approach; still red after that means you stop and report, with both
+diagnoses. **Never push a known-red branch.**
+
+## Step 4 — EVIDENCE
+
+1. **Walk the acceptance criteria against the diff:** each is **met** (say how) or **flagged** in
    the PR body.
-3. **Visual evidence** for anything a user can see: commit (explicit paths), push the branch so the
-   preview builds (`git push -u origin issue/<n>-<slug>`, no PR yet), then run the
-   `visual-evidence` skill end to end.
+2. **Before and after** for anything a user can see: push the branch so the preview builds
+   (`git push -u origin issue/<n>-<slug>`, no PR yet), then run the `visual-evidence` skill end to
+   end: `pnpm before-after` per issue, every image read, one row per issue in the fixed table.
 
 ## Step 5 — SHIP
 
-1. **Commit** — explicit paths only, never `git add -A`; the session's trailers.
-2. **Local review** — `pnpm review` (the `local-review` skill). Only SHIP, or every finding
-   fixed / refuted / deferred in writing, proceeds. Fixes are their own commits, re-gated.
-3. **PR body** to `.lane/pr-body.md`: **Summary** (two or three sentences for the user's side) ·
-   a bare `Closes #<n>` line · **Plan** · **What happened** (the `agent-team` run log) ·
-   **Acceptance criteria** (met / flagged) · **Test gate** (verdict + run link) · **Local review** ·
-   **Visual evidence** · **Try it on the preview** (`check-steps`) · **Follow-ups considered**.
-4. **Push and open it:**
+1. **Commit** anything left — explicit paths only, never `git add -A`; the session's trailers.
+   Only a loop that ended green with review SHIP (or every finding fixed / refuted / deferred in
+   writing) reaches this step.
+2. **PR body** to `.lane/pr-body.md`, always these sections in this order: **Summary** (two or
+   three sentences for the user's side) · a bare `Closes #<n>` line · **Visual evidence** (the
+   fixed before/after table) · **Try it on the preview** (`check-steps`) · **Acceptance criteria**
+   (met / flagged) · **Plan** · **What happened** (the `agent-team` run log, loop passes included) ·
+   **Test gate** (verdict + run link) · **Local review** (verdict, attacks tried, dispositions) ·
+   **Follow-ups considered**. What a reviewer looks at first comes first.
+3. **Push and open it:**
    ```bash
    git push -u origin issue/<n>-<slug>
    head -3 .lane/pr-body.md && gh pr create --base main --title "<imperative title> (#<n>)" --body-file .lane/pr-body.md
@@ -102,12 +112,13 @@ parallel, red-first tests, reports to `.lane/`. Then review the actual diff your
    A refused push means someone else committed to the branch: stop and ask. A change to
    `.github/workflows/` is never pushed by the agent (CLAUDE.md → Secrets): describe it in the PR
    body for the human to apply.
-5. **CI green on the pushed SHA** (`gate` skill). Then resolve the preview URL into the body
-   (`check-steps` two-phase rule) so only real, verified links reach the human.
-6. **Comment "ready to test"** on the issue: the outcome in 2–4 plain sentences, the PR and preview
-   links, 2–3 try-this steps, the verified screenshots. A non-technical reader must *see* the fix.
-7. Remove the worktree (`git worktree remove …`; the branch lives on the remote).
-8. **Report:** PR URL, gate verdict, review verdict, try-it steps, and the footer. Then stop:
+4. **CI green on the pushed SHA** (`gate` skill); red goes back through the loop. Then resolve
+   the preview URL into the body (`check-steps` two-phase rule): only verified links reach the human.
+5. **Comment "ready to test"** on the issue: the outcome in 2–4 plain sentences, the PR and preview
+   links, 2–3 try-this steps, and this issue's before/after row under the table header. A
+   non-technical reader must *see* the fix.
+6. Remove the worktree (`git worktree remove …`; the branch lives on the remote).
+7. **Report:** PR URL, gate verdict, review verdict, try-it steps, and the footer. Then stop:
    **merging is the human's.**
 
 **After merge** (if seen in-session): a one-line "shipped" comment on the issue. The lane that

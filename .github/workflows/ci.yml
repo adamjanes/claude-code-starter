@@ -52,13 +52,13 @@ jobs:
             core.setOutput('reused', 'false')
 
   gate:
-    name: Lint, typecheck, test & build
+    name: Lint, typecheck, test, build & e2e
     needs: reuse
     # !cancelled() lets this run when `reuse` was skipped (every push); a reused PR skips it, which counts as passing.
     if: ${{ !cancelled() && needs.reuse.outputs.reused != 'true' }}
     # To run on your own machine: runs-on: [self-hosted, <label>], and keep a fork guard on the job (docs/github-actions.md).
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -71,3 +71,16 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      # A green run uploads nothing; a cancelled one (a job timeout) still leaves its traces.
+      - name: Upload the Playwright report
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: warn

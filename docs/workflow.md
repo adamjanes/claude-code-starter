@@ -47,24 +47,38 @@ You reply `go`. That's the last thing it asks.
 
 What happens next, unattended:
 
-1. **Build.** One builder sub-agent per file-disjoint unit (`agent-team`); the failing test first
-   (`tdd`). The orchestrator reads the actual diff, not the agents' reports.
-2. **Gate.** `pnpm gate` pushes the worktree, merged onto `main`, to `gate/issue-12-…` and waits
-   for GitHub Actions. Red that isn't environmental gets fixed and gated again.
-3. **Evidence.** It pushes the branch, waits for the preview, screenshots the card before (on
-   `main`) and after (on the preview), reads every image against the acceptance criteria, and
-   uploads them.
-4. **Review.** `pnpm review` runs a fresh, read-only Claude session over the committed diff. Each
-   finding is fixed, refuted in writing, or deferred.
-5. **PR.** It opens the PR with a bare `Closes #12`, the plan, the run log, each criterion met or
-   flagged, the gate run, the review verdict, the screenshots, and try-it steps:
+1. **Build.** One builder sub-agent per file-disjoint unit (`agent-team`), each running its own
+   small loop: failing test, smallest change, green (`tdd`).
+2. **The loop, until green.** Every pass, in order:
+   - **Verify:** the orchestrator reads the actual diff against the plan, not the agents' reports.
+   - **Gate:** `pnpm gate` pushes the worktree, merged onto `main`, to `gate/issue-12-…`, and GitHub
+     Actions runs lint (with the custom rules), typecheck, unit and convention tests, the build and
+     a browser smoke test.
+   - **Review:** `pnpm review` has a fresh, read-only Claude attack the committed diff: for each
+     changed behaviour it tries the input most likely to break it, then tries to refute its own
+     findings.
+
+   Anything wrong, red or found goes to a **fresh fixer agent** briefed with just that problem, and
+   the pass starts again. Three reds on the same failure means a new diagnosis and a new approach,
+   not a fourth patch; if that fails too, it stops and tells you.
+
+   ```
+   pass 1  verify ✓  gate ✗ e2e "home lists tasks in order"   → introduced → fixer C
+   pass 2  verify ✓  gate ✓  review: 1 finding (refuted: the date is already normalised upstream)  → green
+   ```
+3. **Evidence.** It pushes the branch, waits for the preview, and runs `pnpm before-after` for
+   each issue: the same page, viewport and element on `main` and on the preview. It reads every
+   image against the acceptance criteria and uploads them.
+4. **PR.** It opens the PR with the before/after table first, then try-it steps, the criteria met
+   or flagged, the plan, the run log, the gate run and the review (the full example:
+   [example-pr.md](example-pr.md)):
    ```
    ## Try it on the preview  (~1 min)
    1. Open https://app-git-issue-12-acme.vercel.app/tasks at 1440px → the "Q4 plan" card's image is 4:3, not stretched.
    2. Narrow the window to 600px → the card looks as it does on main.
    ```
-6. **CI green on the pushed SHA**, preview URL resolved, then a "ready to test" comment on #12 with
-   the links, the steps and the screenshots.
+5. **CI green on the pushed SHA**, preview URL resolved, then a "ready to test" comment on #12 with
+   the links, the steps and its before/after row.
 
 Every message from the first branch onwards ends with the footer:
 

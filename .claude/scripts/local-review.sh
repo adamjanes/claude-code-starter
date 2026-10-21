@@ -27,8 +27,8 @@ git diff origin/main...HEAD > "$R/branch.patch"
 
 {
   printf '%s\n' \
-    "You are a skeptical senior code reviewer. Your working directory is a checkout of this repository." \
-    "You have ONLY the Read, Grep and Glob tools: no shell and no git. Review ONLY these changes:" "" \
+    "Your working directory is a checkout of this repository. You have ONLY the Read, Grep and Glob" \
+    "tools: no shell and no git. Review ONLY these changes:" "" \
     "- changed files: $R/files.txt" \
     "- full diff:     $R/branch.patch" ""
   cat "$PROMPT_FILE"

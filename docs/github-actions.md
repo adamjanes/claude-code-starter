@@ -24,8 +24,8 @@ the same tree, and the PR only gets a green tick for a tree that actually passed
 
 | File | Runs on | What it does |
 |---|---|---|
-| `ci.yml` | push to `main` and `gate/**`, every PR | The gate: lint, typecheck, test, build. On a PR, first checks whether this exact tree already passed on a gate branch and, if so, skips the duplicate run. |
-| `pr-guards.yml` | PR opened, edited, pushed, labelled | One cheap job: a bare `Closes #<n>` line; a `## Visual evidence` section when UI paths change; migrations alone. |
+| `ci.yml` | push to `main` and `gate/**`, every PR | The gate: ESLint with custom rules, strict typecheck, unit and convention tests, build, end-to-end smoke in a real browser. On a PR, first checks whether this exact tree already passed on a gate branch and, if so, skips the duplicate run. |
+| `pr-guards.yml` | PR opened, edited, pushed, labelled | One cheap job: a bare `Closes #<n>` line; the fixed `Issue \| What changed \| Before \| After` table when UI paths change; migrations alone. |
 | `pr-preview-link.yml` | the Vercel bot's first comment, PR edits | Pins the branch's preview URL as the first line of the PR description. Delete it if you're not on Vercel. |
 | `gate-cleanup.yml` | PR closed | Deletes the lane's `gate/<lane>` branch. |
 
@@ -47,6 +47,9 @@ Why this shape:
 
 - **One definition of "the full suite".** Whatever `ci.yml` runs *is* the gate. Add a leg there and
   every lane, agent or human, runs it from then on.
+- **A red gate is the start of a loop, not the end of a run.** The lane reads the failed step's
+  log, classifies it, hands an introduced failure to a fresh fixer agent, and gates again (the
+  `agent-team` skill).
 - **The laptop stays free.** Five agents running five test suites at once on one machine flake on
   shared ports and starve each other. GitHub's queue serializes nothing you didn't ask it to.
 - **It tests what will merge**, not what's on the branch: the gate commit is already merged onto
@@ -59,7 +62,7 @@ Why this shape:
 `bash scripts/setup-github.sh` sets it up (and the labels) after printing the plan and asking:
 
 - changes reach `main` only through a PR;
-- required checks: **Lint, typecheck, test & build** and **Issue link, visual evidence and migrations**
+- required checks: **Lint, typecheck, test, build & e2e** and **Issue link, visual evidence and migrations**
   (a check *skipped* because the gate run was reused counts as passing);
 - no force-pushes, no deletion; `strict` off (no "branch must be up to date": see No routine rebase);
 - admins can still merge. That's the human. The agent can't, for three independent reasons: the
@@ -72,9 +75,9 @@ Branch protection on a private repo needs GitHub Pro, Team or Enterprise.
 
 - **The agent's token: `repo` + `read:org`. Never `workflow`.** A workflow can read every secret the
   repo has, so the ability to push one is the keys to everything. When a lane needs a CI change, it
-  describes it in the PR body; a human applies it. (Kelvin goes one step further: an agent edits a
-  mirror in `.github/workflows-src/`, and a GitHub App installs it into `.github/workflows/` after
-  a human merges. Worth it once agents propose CI changes weekly.)
+  describes it in the PR body; a human applies it. (Once agents propose CI changes weekly, go a
+  step further: agents edit a mirror in `.github/workflows-src/`, and a GitHub App installs it into
+  `.github/workflows/` after a human merges.)
 - **Production secrets live in the `production` environment**, deployable only from `main`. A job
   that needs one declares `environment: production`. PR branches and `gate/**` refs can't read
   them, so nothing an agent pushes can reach production credentials before a human merges.

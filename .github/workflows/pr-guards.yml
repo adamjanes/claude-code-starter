@@ -56,11 +56,25 @@ jobs:
             exit 0
           fi
           printf 'User-visible files:\n%s\n' "$UI_FILES"
-          if grep -qiE '^##+ *Visual evidence' <<<"$PR_BODY"; then
-            echo "The body carries a Visual evidence section."
+          # >>> evidence-table
+          evidence_section() {
+            tr -d '\r' <<<"$1" | awk '{ l = tolower($0) } l ~ /^##+ *visual evidence/ { on = 1; next } on && /^## / { exit } on { print }'
+          }
+          has_evidence_table() {
+            local section
+            section="$(evidence_section "$1")"
+            grep -qiE '^\| *issue *\| *what changed *\| *before *\| *after *\|' <<<"$section"
+          }
+          # <<< evidence-table
+          if ! grep -qiE '^##+ *Visual evidence' <<<"$PR_BODY"; then
+            echo "::error::This PR changes what users see but its body has no '## Visual evidence' section (.claude/skills/visual-evidence/SKILL.md)."
+            exit 1
+          fi
+          if has_evidence_table "$PR_BODY"; then
+            echo "The Visual evidence section carries the before/after table."
             exit 0
           fi
-          echo "::error::This PR changes what users see but its body has no '## Visual evidence' section (.claude/skills/visual-evidence/SKILL.md)."
+          echo "::error::The Visual evidence section needs the table with this exact header: | Issue | What changed | Before | After |  One row per issue, made with 'pnpm before-after' (.claude/skills/visual-evidence/SKILL.md)."
           exit 1
 
       - name: Migrations ship in their own PR

@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-// `pnpm gate` — CI is the gate and GitHub is the queue. Snapshots the working tree (untracked included; branch, index
-// and HEAD untouched), merges it onto origin/main, pushes the result to gate/<lane>, waits for ci.yml, exits with its verdict.
-// rc: 0 pass · 1 fail · 2 not run (cancelled, never started) · 3 not submitted (conflict, setup) · 124 timed out · 130 interrupted
+// `pnpm gate`: snapshots the worktree (untracked included; index and HEAD untouched), merges it onto origin/main, pushes it
+// to gate/<lane>, waits for ci.yml. rc: 0 pass · 1 fail · 2 not run · 3 not submitted · 124 timed out · 130 interrupted
 
 import { execFileSync, spawnSync } from 'node:child_process'
 import fs from 'node:fs'

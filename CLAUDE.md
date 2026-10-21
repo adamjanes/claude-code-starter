@@ -26,6 +26,11 @@ live in `.claude/commands/` (what you type) and `.claude/skills/` (the engines t
 4. **`/qa <PR#>`** — feedback on the preview becomes a fix on the same branch, recorded on the PR.
 5. **`/overnight`** — the same lanes, unattended, across every `ready` issue; one morning report.
 
+**Inside every lane, a loop runs until green.** Builders edit; the orchestrator verifies the diff,
+gates it on CI, and has a fresh read-only reviewer attack it. Anything wrong goes to a fresh fixer
+agent and the pass starts again. Three reds on one failure means a new diagnosis, not a fourth
+patch (the `agent-team` skill owns the loop and its bounds).
+
 **The issue is the command center.** Lanes narrate there in plain English: started → ready to test
 (preview + try-it steps + screenshots) → shipped. Code detail belongs in the PR; the issue thread
 must read complete to someone who doesn't read code.
@@ -35,13 +40,15 @@ must read complete to someone who doesn't read code.
 - **Merging to `main` is the human's action, always.** Agents push branches and open PRs; they never
   merge and never push `main`. Enforced three times: branch protection, the deny rule in
   `.claude/settings.json`, and the `guard-bash.mjs` hook.
-- **Done = CI green on the pushed SHA + local review SHIP.** Never leave a red PR for the human.
-  "Tests pass locally" is not a verdict; `pnpm gate` is (the `gate` skill).
+- **Done = CI green on the pushed SHA + review SHIP.** Never leave a red PR for the human.
+  "Tests pass locally" is not a verdict; `pnpm gate` is: lint with custom rules, strict typecheck,
+  unit and convention tests, build and an end-to-end smoke, on GitHub Actions (the `gate` skill).
 - **Work happens in worktrees**, one per lane, cut from a fresh `origin/main`. The root checkout stays
   a clean `main` for reading (a SessionStart hook warns when it isn't).
 - **Stage explicit paths.** Never `git add -A` or `commit -a`: concurrent lanes share a machine.
-- **A user-visible change ships with screenshots** in the PR's `## Visual evidence` section
-  (CI-enforced, the `visual-evidence` skill). **Every PR closes an issue** (CI-enforced).
+- **A user-visible change ships with a before and after** per issue, in the same
+  `| Issue | What changed | Before | After |` table in every PR (CI-enforced, the
+  `visual-evidence` skill). **Every PR closes an issue** (CI-enforced).
 - **Migrations ship as their own PR, merged first**, so the schema exists before the code using it
   (CI-enforced in `pr-guards.yml`; point `MIGRATIONS_PATH` at your migrations folder).
 - **Verify, don't trust.** A sub-agent's report, a green tick, a grep and your own reasoning are
@@ -67,6 +74,13 @@ must read complete to someone who doesn't read code.
   proves nothing about the moment `gh` opens the path.
 - **Wait in the background, never in turns.** A gate, a CI run or a preview build is one
   `run_in_background` command that exits on every end state.
+
+## Context: the orchestrator stays small
+
+The orchestrator is the one long-lived context, so it holds decisions and evidence, never raw
+material: sub-agents read and edit in their own windows; their reports come from `.lane/` files;
+diffs are read by stat, then hunks; logs go to files and are searched; waits run in the
+background; new work goes to a fresh agent. (`agent-team` skill → Context.)
 
 ## Models, by role
 
@@ -104,6 +118,8 @@ with the three-line footer** in `.claude/skills/handback/SKILL.md`.
 - `.claude/skills/` — `agent-team` (the swarm) · `gate` (CI as the test suite) · `local-review` ·
   `tdd` · `visual-evidence` · `check-steps` · `design-pages` · `handback`
 - `.claude/hooks/` — the Bash guard and the root-checkout check; wired in `.claude/settings.json`
+- `eslint-rules/` — the custom lint rules · `tests/unit/conventions/` — house rules as tests ·
+  `tests/e2e/` — the browser smoke the gate runs
 - `.github/workflows/` — `ci.yml` (the gate), `pr-guards.yml`, `pr-preview-link.yml`, `gate-cleanup.yml`
-- `docs/` — `workflow.md` (a worked example), `github-actions.md` (the CI topology), `setup.md`,
-  `adapting.md` (porting this to another stack)
+- `docs/` — `workflow.md` (a worked example), `example-pr.md` (the PR it produces),
+  `github-actions.md` (the CI topology), `setup.md`, `adapting.md` (porting this to another stack)

@@ -6,7 +6,9 @@ your project is different, roughly in the order you'll meet them.
 
 | Touch point | Where | What to change |
 |---|---|---|
-| **The gate's suite** | `.github/workflows/ci.yml`, job `gate` | Your install, lint, typecheck, test and build steps. Whatever runs here *is* "the full suite". Keep the job name, or update the required check in `scripts/setup-github.sh`. |
+| **The gate's suite** | `.github/workflows/ci.yml`, job `gate` | Your install, lint, typecheck, test, build and e2e steps. Whatever runs here *is* "the full suite". Keep the job name, or update the required check in `scripts/setup-github.sh`. |
+| **Custom lint rules** | `eslint-rules/` | Keep the comment rules; add one whenever a review comment repeats itself. A rule is cheaper than a reminder. |
+| **Convention tests** | `tests/unit/conventions/` | House rules as tests (tokens only, where secrets may live). Each fails naming the file and line. |
 | **The fast loop** | `package.json` → `check` | Lint + typecheck + unit tests, under a minute. Python: `ruff check && mypy . && pytest -q`. |
 | **Script entry points** | `package.json` | `pnpm gate`, `pnpm review`, `pnpm capture`, `pnpm evidence` are Node scripts. Not a Node project? Keep a tiny `package.json` for them, or call `node scripts/gate.mjs` directly and update the commands' text. |
 | **Project facts** | `CLAUDE.md`, top block | Product, decision-maker, stack, commands, preview host. |
@@ -19,7 +21,7 @@ your project is different, roughly in the order you'll meet them.
 
 ## Growing it
 
-Things Kelvin, the product this was extracted from, added once the basics held:
+Worth adding once the basics hold:
 
 - **A request inbox before issues.** Asks from anyone but the decision-maker land in a separate
   `Requests` repo; only the decision-maker promotes one into planned work. Keeps the engineering

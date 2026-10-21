@@ -23,7 +23,7 @@ LABELS=(
   "shift|fbca04|The record of one /overnight shift"
   "no-issue|cfd3d7|PR guard: this PR closes no issue"
 )
-CHECKS=("Lint, typecheck, test & build" "Issue link, visual evidence and migrations")
+CHECKS=("Lint, typecheck, test, build & e2e" "Issue link, visual evidence and migrations")
 
 cat <<EOF
 Repo: $REPO ($VISIBILITY)

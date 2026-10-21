@@ -19,7 +19,9 @@
     "review": "bash .claude/scripts/local-review.sh",
     "capture": "node scripts/capture.mjs",
     "design:capture": "node scripts/design-capture.mjs",
-    "evidence": "node .claude/scripts/upload-evidence.mjs"
+    "evidence": "node .claude/scripts/upload-evidence.mjs",
+    "test:e2e": "playwright test",
+    "before-after": "node scripts/before-after.mjs"
   },
   "dependencies": {
     "next": "16.2.6",
@@ -27,6 +29,7 @@
     "react-dom": "19.2.6"
   },
   "devDependencies": {
+    "@playwright/test": "1.61.1",
     "@types/node": "24.19.1",
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
@@ -35,6 +38,7 @@
     "globals": "16.4.0",
     "playwright": "1.61.1",
     "typescript": "5.9.3",
-    "vitest": "4.1.7"
+    "vitest": "4.1.7",
+    "yaml": "2.9.1"
   }
 }
