@@ -31,6 +31,10 @@ flowchart LR
 - **Nothing leaves the loop until it's green.** Builders edit; the orchestrator checks the diff,
   CI runs the full suite, a fresh Claude attacks the change. Anything wrong goes to a fresh fixer
   agent and the loop goes round again.
+- **Every change starts with a failing test.** Builders write the test first, at a public seam,
+  with expected values worked out by hand, and the PR shows it going red.
+- **Every push is a live site.** Vercel builds each branch into its own preview; that's where you
+  review, where the screenshots come from, and merging to `main` is the production deploy.
 - **The verdict comes from GitHub Actions, never a laptop.** Lint with custom rules, strict
   types, unit and convention tests, the build and a browser smoke test, on exactly the tree that
   will merge.
@@ -120,6 +124,30 @@ deleting a test, raising a timeout or skipping a check.
 
 The PR records the loop under **What happened**: how many passes, what each fixer was sent, what
 verify and review caught.
+
+## Tests first
+
+The innermost loop is test-driven development, and every builder and fixer follows the `tdd`
+skill (`.claude/skills/tdd/SKILL.md`):
+
+| Rule | What it means here |
+|---|---|
+| **Red before green** | The failing test first, then the smallest change that passes it. One behaviour per cycle, never a block of tests written up front. |
+| **Tests sit at public seams** | A route, a server action, a rendered component, an exported function: never a private helper. The plan you approve names the seam for each behaviour, before any code. |
+| **Expected values come from outside the code** | A spec, or a hand-worked example with the working in a comment. Never a value computed with the code's own helpers, never a number pasted from the run you just did. |
+| **Fake only the boundaries** | External HTTP, the database client, time. Never the module, renderer or parser the test exists to prove. |
+| **The receipt** | A test added or changed after the fact has to be seen failing: break the code on purpose, show the *assertion* go red, put the line in the PR. |
+| **Name the behaviour** | "a done task due today shows its date, not Today". Never "works correctly", never a ticket number. |
+
+From the example PR, before the code existed:
+
+```
+× says how many days late an overdue task is
+  AssertionError: expected { text: '20 Oct', tone: 'late' } to deeply equal { text: '2 days late', tone: 'late' }
+```
+
+The adversarial reviewer then judges every new test against the same skill: would it catch the
+attacks the reviewer just tried? A test that can't fail is reported as a finding.
 
 ## What gets checked
 
@@ -295,6 +323,31 @@ decisions taken for you, what needs you.
 The full topology, branch protection, token scopes and self-hosted runners:
 [docs/github-actions.md](docs/github-actions.md).
 
+## Vercel: every push is a live site
+
+Nothing is reviewed on a laptop. Vercel builds every branch the moment it's pushed, and that
+preview is the review surface for everything downstream.
+
+```
+ git push issue/2-…  ──▶  Vercel builds it  ──▶  app-git-issue-2-….vercel.app  ──▶  pinned to the PR
+   (no PR needed)          (vercel.json)          a live site for this branch       (pr-preview-link.yml)
+
+ you merge  ──▶  main  ──▶  production deploy   (the merge is the deploy; nothing to run by hand)
+```
+
+What runs against the preview:
+
+- **Before / after:** `pnpm before-after` shoots `main`'s deployment and the branch's preview, same
+  page, viewport and element.
+- **Try-it steps:** every step in the PR is a preview URL, an action, and what you should see.
+- **Design pages:** `/mockup` pushes a `design/<slug>` branch; you click its options on the preview.
+- **Your review:** thirty seconds on the real build, before you merge.
+
+`gate/**` branches are CI-only snapshots, so `scripts/vercel-ignore.sh` skips their builds. Vercel
+protects previews by default; captures send `VERCEL_AUTOMATION_BYPASS_SECRET` to get past it.
+Setup is importing the repo in Vercel ([docs/setup.md](docs/setup.md#3-previews-vercel)). Another
+host works the same way ([docs/github-actions.md#previews](docs/github-actions.md#previews)).
+
 ## The rules, and why
 
 | Rule | Why |
@@ -305,6 +358,7 @@ The full topology, branch protection, token scopes and self-hosted runners:
 | **Verify, don't trust.** | Sub-agent reports, green ticks and the agent's own reasoning are claims. The diff, the CI run and a test seen to fail are evidence. |
 | **Failures go to a fresh agent.** | A long context defends its own work. A new agent with one problem fixes it. |
 | **Tests go red before they go green.** | A test nobody saw fail might not be able to. |
+| **Review on the preview, not a laptop.** | The preview is the exact build that will ship. Every PR has one, so nobody has to check out a branch to see it. |
 | **The same before/after table, every PR.** | You learn to read one shape. Same page, same viewport, same element, so the only difference is the change. |
 | **Worktrees, explicit staging.** | Several lanes share one machine. `git add -A` picks up another lane's files, a secret, or scratch. |
 | **The agent's token has no `workflow` scope.** | A workflow can read every secret. CI changes are proposed in the PR body and applied by a human. |
