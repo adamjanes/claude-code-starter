@@ -157,7 +157,7 @@ before/after table is identical every time — one row per issue, `Issue | What 
 After` — and CI fails a UI PR that doesn't have it.
 
 ```markdown
-**Preview:** https://app-git-epic-1-task-list.vercel.app
+**Preview:** <pinned here once the branch's preview builds>
 
 ## Summary
 The task list reads at a glance: overdue tasks say how late they are, and finished tasks sink
@@ -181,7 +181,8 @@ then **Acceptance criteria** (each met or flagged) · **Plan** · **What happene
 **Test gate** · **Local review** (verdict, attacks tried, each finding's disposition) ·
 **Follow-ups considered**.
 
-The full example, with real screenshots from this repo's demo app:
+The full example, from a real run on this repo's demo app: three passes of the loop, the
+reviewer's attacks and findings, and real screenshots:
 **[docs/example-pr.md](docs/example-pr.md)**.
 
 `pnpm before-after --issue 2 --name overdue --before <main url> --after <preview url> --selector <css>`
@@ -345,8 +346,8 @@ and re-sync from the last message alone:
 
 ```
 ---
-🔗 **PR [#4](…)** · preview https://app-git-epic-1-task-list.vercel.app · issues [#2](…) [#3](…)
-**Session:** `/work #1` — the task list reads at a glance. Gate green on pass 2, review SHIP.
+🔗 **PR [#4](…)** · preview <the branch's preview URL> · issues [#2](…) [#3](…)
+**Session:** `/work #1` — the task list reads at a glance. Gate green, review SHIP on pass 3.
 **Just did:** opened the PR, posted "ready to test" on #2 and #3. **Next:** you try the preview and merge.
 ```
 
