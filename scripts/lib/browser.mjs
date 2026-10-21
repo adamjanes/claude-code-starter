@@ -15,7 +15,8 @@ function bypassHeaders() {
 
 export async function openBrowser(viewport = VIEWPORT) {
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport, extraHTTPHeaders: bypassHeaders() });
+  // 2x pixels: a PR table scales screenshots down, and text must stay readable when it does.
+  const context = await browser.newContext({ viewport, deviceScaleFactor: 2, extraHTTPHeaders: bypassHeaders() });
   return { browser, page: await context.newPage() };
 }
 

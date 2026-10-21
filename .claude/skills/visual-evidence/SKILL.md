@@ -42,7 +42,8 @@ pnpm before-after --issue 2 --name overdue \
   --selector '[aria-label="Tasks"]' --upload
 ```
 
-It shoots both URLs headless at 1440×900 (just the `--selector` element when given) into
+It shoots both URLs headless at 1440×900 and 2× pixels, so text survives a table scaling it down
+(just the `--selector` element when given), into
 `.lane/2-overdue-{before,after}.png`, uploads both with `--upload`, and prints the table row with
 `<what changed>` left for you to fill. Without `--upload` the cells hold the local paths, for a
 look before anything is published.
