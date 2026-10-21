@@ -1,0 +1,32 @@
+name: Gate cleanup
+
+# When a PR closes, its lane's gate/<lane> branch has nothing left to prove. Same naming rule as scripts/gate.mjs.
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  delete:
+    name: Delete the lane's gate branch
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const lane = context.payload.pull_request.head.ref
+              .toLowerCase()
+              .replace(/[^a-z0-9._-]+/g, '-')
+              .replace(/-{2,}/g, '-')
+              .replace(/^[-.]+|[-.]+$/g, '')
+            try {
+              await github.rest.git.deleteRef({ ...context.repo, ref: `heads/gate/${lane}` })
+              core.info(`Deleted gate/${lane}`)
+            } catch (e) {
+              if (e.status === 422 || e.status === 404) core.info(`No gate/${lane} branch.`)
+              else throw e
+            }

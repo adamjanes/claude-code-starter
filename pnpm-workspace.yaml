@@ -1,0 +1,4 @@
+# pnpm 11 fails the install on an ignored build script, so native packages are listed here.
+allowBuilds:
+  sharp: true
+  unrs-resolver: true

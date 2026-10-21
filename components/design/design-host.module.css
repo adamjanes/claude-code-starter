@@ -1,0 +1,64 @@
+.host {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border-strong);
+  background: var(--color-surface-sunken);
+  font-size: var(--text-xs);
+}
+
+.back {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--color-text);
+}
+
+.title {
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--color-border-strong);
+  font-weight: 600;
+}
+
+.group {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.group:first-of-type {
+  margin-left: auto;
+}
+
+.tab {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.tab[aria-current="true"] {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.stage {
+  background: var(--color-bg);
+}

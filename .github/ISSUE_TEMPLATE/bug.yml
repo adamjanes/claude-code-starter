@@ -1,0 +1,44 @@
+name: Bug
+description: Something that worked, or should work, and doesn't.
+labels: ["bug"]
+body:
+  - type: input
+    id: who-asked
+    attributes:
+      label: Who asked
+      placeholder: "Sam, for Acme, 14 Oct"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happens
+    attributes:
+      label: What happens
+      description: The behaviour, with screenshots.
+    validations:
+      required: true
+  - type: textarea
+    id: what-should-happen
+    attributes:
+      label: What should happen
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open <url>
+        2. Click <thing>
+        3. See <wrong result>
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Console errors, logs, links to the failing deploy.
+  - type: textarea
+    id: suspected-area
+    attributes:
+      label: Suspected area
+      description: File paths, if you know them.

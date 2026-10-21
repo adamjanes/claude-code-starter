@@ -1,0 +1,43 @@
+name: Story
+description: Something new or better, with acceptance criteria someone else can check on the preview.
+labels: ["story"]
+body:
+  - type: input
+    id: who-asked
+    attributes:
+      label: Who asked
+      placeholder: "Sam, for Acme, call on 14 Oct"
+    validations:
+      required: true
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User story
+      placeholder: "As a <role>, I want <capability>, so that <benefit>."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: Testable outcomes, checkable on the preview by someone who didn't build it.
+      placeholder: |
+        - [ ] First testable outcome
+        - [ ] Second testable outcome
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behaviour
+    attributes:
+      label: Expected behaviour
+      description: Screenshots, mockups, a design page link.
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Background, code pointers, related issues and PRs.
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: What this deliberately does not do, so the change stays small.

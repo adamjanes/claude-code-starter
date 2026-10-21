@@ -1,0 +1,28 @@
+name: Epic
+description: One outcome, too big for one PR. /work <epic#> scopes it into sub-issues and builds them as one PR.
+labels: ["epic"]
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What is true for users when this is done, in one or two sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] First testable outcome
+    validations:
+      required: true
+  - type: textarea
+    id: for-the-agent
+    attributes:
+      label: For the agent picking this up
+      description: Where the code lives, constraints, a design branch (**Branch:** design/<slug>), decisions already made.
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope

@@ -1,0 +1,79 @@
+name: PR guards
+
+# The PR rules in CLAUDE.md, as one cheap job: every PR traces to an issue, user-visible PRs carry screenshots,
+# migrations ship alone. Edit the env block to fit your repo's layout.
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  UI_PATHS: '^(app/|components/|public/|styles/)'
+  MIGRATIONS_PATH: '^(supabase/migrations/|migrations/|db/migrate/)'
+
+jobs:
+  guard:
+    name: Issue link, visual evidence and migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        id: checkout
+        with:
+          fetch-depth: 0
+
+      # A bare line: GitHub ignores a Closes inside backticks or a table, and so does this check.
+      - name: Every PR closes an issue
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-issue') && github.actor != 'dependabot[bot]' }}
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if grep -qiE '^(closes|fixes|resolves) +#[0-9]+' <<<"$PR_BODY"; then
+            echo "PR body closes an issue."
+            exit 0
+          fi
+          echo "::error::The PR body has no bare 'Closes #<n>' line. Every PR traces back to an issue (label 'no-issue' to opt out)."
+          exit 1
+
+      # Every guard reports, even after an earlier one fails.
+      - name: User-visible PRs carry Visual evidence
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          UI_FILES="$(git diff --name-only "$BASE_SHA"..."$HEAD_SHA" | grep -E "$UI_PATHS" | grep -vE '\.test\.(ts|tsx)$' || true)"
+          if [ -z "$UI_FILES" ]; then
+            echo "No user-visible files touched."
+            exit 0
+          fi
+          printf 'User-visible files:\n%s\n' "$UI_FILES"
+          if grep -qiE '^##+ *Visual evidence' <<<"$PR_BODY"; then
+            echo "The body carries a Visual evidence section."
+            exit 0
+          fi
+          echo "::error::This PR changes what users see but its body has no '## Visual evidence' section (.claude/skills/visual-evidence/SKILL.md)."
+          exit 1
+
+      - name: Migrations ship in their own PR
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          FILES="$(git diff --name-only "$BASE_SHA"..."$HEAD_SHA")"
+          MIG="$(grep -E "$MIGRATIONS_PATH" <<<"$FILES" || true)"
+          OTHER="$(grep -vE "$MIGRATIONS_PATH" <<<"$FILES" | grep -v '^$' || true)"
+          if [ -n "$MIG" ] && [ -n "$OTHER" ]; then
+            printf '::error::This PR mixes migrations with other changes. Ship the migration alone, merged first.\nMigrations:\n%s\nEverything else:\n%s\n' "$MIG" "$OTHER"
+            exit 1
+          fi
+          echo "Migration-only, or no migrations."
